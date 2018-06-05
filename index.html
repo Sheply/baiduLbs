@@ -1,0 +1,77 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html {width: 100%;height: 100%; margin:0;font-family:"微软雅黑";}
+        #allmap{height:100%;width:100%;}
+    </style>
+    <!--
+        作者：hzw2312@sina.com
+        描述：ak：这里的ak是需要在百度应用里面申请的
+    -->
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=aGf0sLjv7DOonc61fINdATGez2d3O8xB"></script>
+    <script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+    <title>查询出车辆行驶轨迹</title>
+</head>
+<body>
+<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("allmap");
+    map.enableScrollWheelZoom();
+    function initMap(){
+        $.ajax({
+            type: 'POST',
+            url: 'index.php',
+            data: {},
+            dataType: 'json',
+            success: function (res) {
+                var runLine = res;
+                //读取后台数据.这里直接读取json文件
+                // jQuery.getJSON(dataroot, function(data){
+                //设置地图中心点(已GPS数组中间的点为中心点)
+                var centre = runLine[parseInt(runLine.length/2)]
+                map.centerAndZoom(new BMap.Point(centre.lng, centre.lat), 13);
+                var arrPois = [];
+                //将后台读取到的GPS点信息，全部存储为百度的BMap.Point坐标点对象并用数组装起来
+                jQuery.each(runLine,function(i, n) {
+                    arrPois.push(new BMap.Point(n.lng,n.lat));
+                });
+                /**添加终点和起点的标记**/
+                addMarker(new BMap.Point(runLine[0].lng,runLine[0].lat),'终点');
+                addMarker(new BMap.Point(runLine[runLine.length-1].lng,runLine[runLine.length-1].lat),'起点');
+                //创建线路
+                var polyline = new BMap.Polyline(
+                    arrPois,//所有的GPS坐标点
+                    {
+                        strokeColor : "red", //线路颜色
+                        strokeWeight : 4,//线路大小
+                        //线路类型(虚线)
+                        strokeStyle : "dashed"});
+                //绘制线路
+                map.addOverlay(polyline);
+                // });
+            }
+        })
+    }
+
+    /**
+     * 标记
+     * @param {Object} point
+     */
+    function addMarker(point,name){
+        var marker = new BMap.Marker(point);
+        var label = new BMap.Label(name, {
+            offset : new BMap.Size(20, -10)
+        });
+        marker.setLabel(label);
+        map.addOverlay(marker);
+    }
+
+    //初始化地图
+    initMap();
+
+</script>
